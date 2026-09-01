@@ -1,6 +1,6 @@
 # =========================================================
 # ARCHIVO: champions.py
-# VERSIÓN: v.1.9.3 (Champions Mandinguera - Vista Móvil / Compacta)
+# VERSIÓN: v.1.9.4 (Champions Mandinguera - Modo Compacto Automático)
 # =========================================================
 
 import base64
@@ -666,8 +666,19 @@ if jornada_key_state not in st.session_state:
 col_tabla, col_partidos = st.columns([1.35, 1], gap="medium")
 
 with col_tabla:
-    # Botón/Interruptor para alternar la vista móvil compacta
-    modo_movil = st.toggle("📱 Vista Compacta (Móvil)", value=False, help="Activa esta opción para ver una tabla resumida sin scroll lateral")
+    # Detección automática si es móvil mediante el navegador
+    if "modo_movil_toggle" not in st.session_state:
+        headers = getattr(st, "context", None) and getattr(st.context, "headers", {})
+        user_agent = headers.get("User-Agent", "").lower() if headers else ""
+        es_movil = any(k in user_agent for k in ["mobi", "android", "iphone", "ipad", "ipod"])
+        st.session_state["modo_movil_toggle"] = es_movil
+
+    # Botón/Interruptor para alternar el modo compacto con detección automática
+    modo_movil = st.toggle(
+        "Modo compacto", 
+        key="modo_movil_toggle", 
+        help="Activa esta opción para ver una tabla resumida sin scroll lateral"
+    )
 
     if equipos and rounds_info and token and userid:
         clasificaciones_grupos = calcular_clasificacion_grupos(
