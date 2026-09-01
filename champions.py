@@ -1,6 +1,6 @@
 # =========================================================
 # ARCHIVO: champions.py
-# VERSIÓN: v.1.9.2 (Champions Mandinguera - Completo y Corregido)
+# VERSIÓN: v.1.9.3 (Champions Mandinguera - Vista Móvil / Compacta)
 # =========================================================
 
 import base64
@@ -464,7 +464,6 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
 
     partidos_j6_c = []
     if len(grupo_c_stats) >= 4:
-        # Ordenados por posición: 0 es 1º, 1 es 2º, 2 es 3º, 3 es 4º, 4 es 5º (eliminado)
         eq_1 = grupo_c_stats[0]["Equipo"]
         eq_2 = grupo_c_stats[1]["Equipo"]
         eq_3 = grupo_c_stats[2]["Equipo"]
@@ -474,15 +473,14 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
         partidos_j6_c.append((eq_1, eq_4))
         partidos_j6_c.append((eq_2, eq_3))
 
-    # Combinamos con los partidos fijos de los grupos A y B para la jornada 6
     partidos_ab = [p for p in partidos_base if obtener_grupo_equipo(p[0]) in ["GRUPO A", "GRUPO B"]]
     return partidos_ab + partidos_j6_c
 
 
 # ---------------------------------------------------------
-# 4. RENDERIZADOR DE TABLA DE GRUPO
+# 4. RENDERIZADOR DE TABLA DE GRUPO (SOPORTE MÓVIL / COMPACTO)
 # ---------------------------------------------------------
-def render_tabla_grupo(datos_grupo, titulo_grupo):
+def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
     css_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap');
@@ -499,7 +497,58 @@ def render_tabla_grupo(datos_grupo, titulo_grupo):
 .excel-table .pts-best3 { background-color: #b76dd0 !important; color: #ffffff !important; font-weight: 900 !important; border-radius: 4px; }
 </style>
 """
-    html_body = f"""{css_style}
+    
+    if modo_movil:
+        html_body = f"""{css_style}
+<h3 style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 8px;">{titulo_grupo}</h3>
+<div class="excel-table-container">
+<table class="excel-table">
+<thead>
+<tr>
+    <th>POS</th>
+    <th style="text-align: left; padding-left: 28px;">EQUIPO</th>
+    <th>J</th>
+    <th>G:E:P</th>
+    <th>DG</th>
+    <th>PTS</th>
+</tr>
+</thead>
+<tbody>
+"""
+        for idx, row in enumerate(datos_grupo):
+            if row["Pos"] in [1, 2]:
+                pts_class = "pts-top2"
+                border_color = "#9e11cc"
+            elif row.get("es_mejor_tercero"):
+                pts_class = "pts-best3"
+                border_color = "#b76dd0"
+            else:
+                pts_class = ""
+                border_color = "transparent"
+
+            row_bg = "#081028" if idx % 2 == 0 else "#0b1a40"
+
+            escudo_val = row.get("escudo")
+            img_src = escudo_val if str(escudo_val).startswith("http") else (f"data:image/png;base64,{get_image_base64(escudo_val)}" if get_image_base64(escudo_val) else "")
+            img_html = f'<img src="{img_src}" class="team-logo"/>' if img_src else "⚽"
+
+            nombre_completo = row['Equipo']
+            nombre_mostrar = ABREVIATURAS.get(nombre_completo, nombre_completo[:4].upper())
+            gep_str = f"{row['G']}:{row['E']}:{row['P']}"
+
+            html_body += f"""<tr style="background-color: {row_bg};">
+<td class="td-pos"><div style="display: flex; align-items: center; height: 100%;"><div style="flex: 1; text-align: center; padding: 9px 4px;">{row['Pos']}</div><div style="width: 5px; background-color: {border_color}; align-self: stretch;"></div></div></td>
+<td class="td-equipo"><div class="team-wrapper">{img_html}<span>{nombre_mostrar}</span></div></td>
+<td>{row['J']}</td>
+<td>{gep_str}</td>
+<td>{row['DG']}</td>
+<td class="{pts_class}">{row['Puntos']}</td>
+</tr>"""
+        html_body += "</tbody></table></div>"
+        return html_body
+
+    else:
+        html_body = f"""{css_style}
 <h3 style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 8px;">{titulo_grupo}</h3>
 <div class="excel-table-container">
 <table class="excel-table">
@@ -514,32 +563,32 @@ def render_tabla_grupo(datos_grupo, titulo_grupo):
 <tbody>
 """
 
-    for idx, row in enumerate(datos_grupo):
-        if row["Pos"] in [1, 2]:
-            pts_class = "pts-top2"
-            border_color = "#9e11cc"
-        elif row.get("es_mejor_tercero"):
-            pts_class = "pts-best3"
-            border_color = "#b76dd0"
-        else:
-            pts_class = ""
-            border_color = "transparent"
+        for idx, row in enumerate(datos_grupo):
+            if row["Pos"] in [1, 2]:
+                pts_class = "pts-top2"
+                border_color = "#9e11cc"
+            elif row.get("es_mejor_tercero"):
+                pts_class = "pts-best3"
+                border_color = "#b76dd0"
+            else:
+                pts_class = ""
+                border_color = "transparent"
 
-        row_bg = "#081028" if idx % 2 == 0 else "#0b1a40"
+            row_bg = "#081028" if idx % 2 == 0 else "#0b1a40"
 
-        escudo_val = row.get("escudo")
-        img_src = escudo_val if str(escudo_val).startswith("http") else (f"data:image/png;base64,{get_image_base64(escudo_val)}" if get_image_base64(escudo_val) else "")
-        img_html = f'<img src="{img_src}" class="team-logo"/>' if img_src else "⚽"
+            escudo_val = row.get("escudo")
+            img_src = escudo_val if str(escudo_val).startswith("http") else (f"data:image/png;base64,{get_image_base64(escudo_val)}" if get_image_base64(escudo_val) else "")
+            img_html = f'<img src="{img_src}" class="team-logo"/>' if img_src else "⚽"
 
-        html_body += f"""<tr style="background-color: {row_bg};">
+            html_body += f"""<tr style="background-color: {row_bg};">
 <td class="td-pos"><div style="display: flex; align-items: center; height: 100%;"><div style="flex: 1; text-align: center; padding: 9px 4px;">{row['Pos']}</div><div style="width: 5px; background-color: {border_color}; align-self: stretch;"></div></div></td>
 <td class="td-equipo"><div class="team-wrapper">{img_html}<span>{row['Equipo'].upper()}</span></div></td>
 <td>{row['J']}</td><td>{row['G']}</td><td>{row['E']}</td><td>{row['P']}</td>
 <td>{row['GF']}</td><td>{row['GC']}</td><td>{row['DG']}</td>
 <td class="{pts_class}">{row['Puntos']}</td>
 </tr>"""
-    html_body += "</tbody></table></div>"
-    return html_body
+        html_body += "</tbody></table></div>"
+        return html_body
 
 
 # ---------------------------------------------------------
@@ -617,12 +666,15 @@ if jornada_key_state not in st.session_state:
 col_tabla, col_partidos = st.columns([1.35, 1], gap="medium")
 
 with col_tabla:
+    # Botón/Interruptor para alternar la vista móvil compacta
+    modo_movil = st.toggle("📱 Vista Compacta (Móvil)", value=False, help="Activa esta opción para ver una tabla resumida sin scroll lateral")
+
     if equipos and rounds_info and token and userid:
         clasificaciones_grupos = calcular_clasificacion_grupos(
             equipos, rounds_info, token, userid, championship_id, userteam_id, hasta_jornada=FIN_CM
         )
         for nombre_grupo, datos_grupo in clasificaciones_grupos.items():
-            html_tabla = render_tabla_grupo(datos_grupo, nombre_grupo)
+            html_tabla = render_tabla_grupo(datos_grupo, nombre_grupo, modo_movil=modo_movil)
             st.markdown(html_tabla, unsafe_allow_html=True)
     else:
         st.warning("Cargando datos de la Champions Mandinguera...")
@@ -667,7 +719,6 @@ with col_partidos:
                     if info_eq and "nombre_equipo" in info_eq:
                         puntos_jornada_sel[info_eq["nombre_equipo"]] = pts
 
-        # Organizar partidos por grupo
         partidos_por_grupo = {"GRUPO A": [], "GRUPO B": [], "GRUPO C": []}
         for eq1_cal, eq2_cal in partidos_jornada:
             grupo = obtener_grupo_equipo(eq1_cal)
@@ -678,12 +729,10 @@ with col_partidos:
             else:
                 partidos_por_grupo["GRUPO A"].append((eq1_cal, eq2_cal))
 
-        # Renderizar por grupo con separadores y escudos a 60px
         for nombre_grupo, lista_partidos in partidos_por_grupo.items():
             if not lista_partidos:
                 continue
 
-            # Separador / Cabecera del grupo
             st.markdown(
                 f"""
                 <div style="background: linear-gradient(90deg, #0b1a40 0%, #132d6b 100%); border-left: 4px solid #00a3e0; padding: 8px 14px; margin-top: 15px; margin-bottom: 10px; border-radius: 4px; font-family: 'Montserrat', sans-serif;">
@@ -742,7 +791,6 @@ with col_partidos:
                     unsafe_allow_html=True
                 )
 
-            # Comprobar si algún equipo de este grupo descansa en esta jornada
             equipos_grupo = GRUPOS_EQUIPOS.get(nombre_grupo, [])
             jugando_grupo = set()
             for n1, n2 in lista_partidos:
