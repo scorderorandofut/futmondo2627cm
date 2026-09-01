@@ -1,6 +1,6 @@
 # =========================================================
 # ARCHIVO: champions.py
-# VERSIÓN: v.1.9.4 (Champions Mandinguera - Modo Compacto Automático)
+# VERSIÓN: v.1.9.5 (Champions Mandinguera - Sin bordes y Modo Compacto Optimizado)
 # =========================================================
 
 import base64
@@ -454,11 +454,9 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
     """Devuelve los partidos de una jornada, calculando dinámicamente el Grupo C en la jornada 6."""
     partidos_base = CALENDARIO_JORNADAS.get(num_jornada, [])
     
-    # Si no es la jornada 6, devolvemos los partidos base estáticos (todos intra-grupo)
     if num_jornada != 6 or not equipos_map or not rounds_info or not token or not userid:
         return partidos_base
 
-    # Para la jornada 6, calculamos la clasificación hasta la jornada 5 para el Grupo C
     clasificacion_hasta_5 = calcular_clasificacion_grupos(equipos_map, rounds_info, token, userid, championship_id, userteam_id, hasta_jornada=5)
     grupo_c_stats = clasificacion_hasta_5.get("GRUPO C", [])
 
@@ -469,7 +467,6 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
         eq_3 = grupo_c_stats[2]["Equipo"]
         eq_4 = grupo_c_stats[3]["Equipo"]
         
-        # 1º vs 4º y 2º vs 3º
         partidos_j6_c.append((eq_1, eq_4))
         partidos_j6_c.append((eq_2, eq_3))
 
@@ -478,16 +475,16 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
 
 
 # ---------------------------------------------------------
-# 4. RENDERIZADOR DE TABLA DE GRUPO (SOPORTE MÓVIL / COMPACTO)
+# 4. RENDERIZADOR DE TABLA DE GRUPO (SOPORTE MÓVIL / COMPACTO SIN BORDES)
 # ---------------------------------------------------------
 def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
     css_style = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap');
-.excel-table-container { width: 100%; overflow-x: auto; margin-top: -3px; background: #0b1a40; border-radius: 8px; padding: 8px; border: 1px solid rgba(0, 163, 224, 0.3) !important; box-sizing: border-box; margin-bottom: 20px; }
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap');
+.excel-table-container { width: 100%; overflow-x: auto; margin-top: -3px; background: #0b1a40; border-radius: 8px; padding: 8px; border: none !important; box-sizing: border-box; margin-bottom: 20px; }
 .excel-table { width: 100%; border-collapse: collapse; font-family: 'Montserrat', sans-serif; color: #ffffff; font-size: 0.95rem; letter-spacing: 0.5px; border: none !important; }
-.excel-table th { color: #8ab4f8; font-weight: 800; text-align: center; padding: 8px 4px; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
-.excel-table td { padding: 9px 6px; text-align: center; vertical-align: middle; }
+.excel-table th { color: #8ab4f8; font-weight: 800; text-align: center; padding: 8px 4px; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; border: none !important; }
+.excel-table td { padding: 9px 6px; text-align: center; vertical-align: middle; border: none !important; }
 .excel-table .td-pos { color: #8ab4f8; font-weight: 700; width: 35px; font-size: 0.95rem; }
 .excel-table .td-equipo { text-align: left; font-weight: 800; font-size: 1.02rem; }
 .excel-table .team-wrapper { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -536,9 +533,10 @@ def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
             nombre_mostrar = ABREVIATURAS.get(nombre_completo, nombre_completo[:4].upper())
             gep_str = f"{row['G']}:{row['E']}:{row['P']}"
 
+            # Se reduce el font-weight a 600 para las abreviaturas en móvil
             html_body += f"""<tr style="background-color: {row_bg};">
 <td class="td-pos"><div style="display: flex; align-items: center; height: 100%;"><div style="flex: 1; text-align: center; padding: 9px 4px;">{row['Pos']}</div><div style="width: 5px; background-color: {border_color}; align-self: stretch;"></div></div></td>
-<td class="td-equipo"><div class="team-wrapper">{img_html}<span>{nombre_mostrar}</span></div></td>
+<td class="td-equipo"><div class="team-wrapper">{img_html}<span style="font-weight: 600;">{nombre_mostrar}</span></div></td>
 <td>{row['J']}</td>
 <td>{gep_str}</td>
 <td>{row['DG']}</td>
