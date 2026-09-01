@@ -1,6 +1,6 @@
 # =========================================================
 # ARCHIVO: champions.py
-# VERSIÓN: v.1.9.5 (Champions Mandinguera - Sin bordes y Modo Compacto Optimizado)
+# VERSIÓN: v.1.9.7 (Champions Mandinguera - DG corregido y cabeceras unificadas)
 # =========================================================
 
 import base64
@@ -233,7 +233,7 @@ def calcular_goles_partido(pts1, pts2, aplicar_regla_diferencia=True):
 
 
 # ---------------------------------------------------------
-# 2. FUNCIONES API FUTMONDO & CACHÉ (Robustas contra bools/None)
+# 2. FUNCIONES API FUTMONDO & CACHÉ
 # ---------------------------------------------------------
 @st.cache_data(ttl=3600, show_spinner=False)
 def login_futmondo(email, password):
@@ -402,6 +402,10 @@ def calcular_clasificacion_grupos(equipos_map, rounds_info, token, userid, champ
                 elif res2 == "E": stats[eq2]["E"] += 1; stats[eq2]["Puntos"] += 1
                 else: stats[eq2]["P"] += 1
 
+    # Actualizar la Diferencia de Goles (DG) de cada equipo
+    for eq_key in stats:
+        stats[eq_key]["DG"] = stats[eq_key]["GF"] - stats[eq_key]["GC"]
+
     # Organizar por grupos
     clasificaciones_grupos = {}
     for nombre_grupo, lista_nombres_eqs in GRUPOS_EQUIPOS.items():
@@ -475,7 +479,7 @@ def obtener_partidos_jornada_evaluados(num_jornada, equipos_map, rounds_info, to
 
 
 # ---------------------------------------------------------
-# 4. RENDERIZADOR DE TABLA DE GRUPO (SOPORTE MÓVIL / COMPACTO SIN BORDES)
+# 4. RENDERIZADOR DE TABLA DE GRUPO
 # ---------------------------------------------------------
 def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
     css_style = """
@@ -497,13 +501,11 @@ def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
     
     if modo_movil:
         html_body = f"""{css_style}
-<h3 style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 8px;">{titulo_grupo}</h3>
 <div class="excel-table-container">
 <table class="excel-table">
 <thead>
 <tr>
-    <th>POS</th>
-    <th style="text-align: left; padding-left: 28px;">EQUIPO</th>
+    <th colspan="2" style="text-align: left; color: #ffffff; padding-left: 8px; font-size: 0.95rem; font-weight: 900; letter-spacing: 1px;">{titulo_grupo}</th>
     <th>J</th>
     <th>G:E:P</th>
     <th>DG</th>
@@ -533,7 +535,6 @@ def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
             nombre_mostrar = ABREVIATURAS.get(nombre_completo, nombre_completo[:4].upper())
             gep_str = f"{row['G']}:{row['E']}:{row['P']}"
 
-            # Se reduce el font-weight a 600 para las abreviaturas en móvil
             html_body += f"""<tr style="background-color: {row_bg};">
 <td class="td-pos"><div style="display: flex; align-items: center; height: 100%;"><div style="flex: 1; text-align: center; padding: 9px 4px;">{row['Pos']}</div><div style="width: 5px; background-color: {border_color}; align-self: stretch;"></div></div></td>
 <td class="td-equipo"><div class="team-wrapper">{img_html}<span style="font-weight: 600;">{nombre_mostrar}</span></div></td>
@@ -547,13 +548,11 @@ def render_tabla_grupo(datos_grupo, titulo_grupo, modo_movil=False):
 
     else:
         html_body = f"""{css_style}
-<h3 style="color: #ffffff; font-family: 'Montserrat', sans-serif; font-weight: 800; margin-bottom: 8px;">{titulo_grupo}</h3>
 <div class="excel-table-container">
 <table class="excel-table">
 <thead>
 <tr>
-    <th>POS</th>
-    <th style="text-align: left; padding-left: 28px;">EQUIPO</th>
+    <th colspan="2" style="text-align: left; color: #ffffff; padding-left: 8px; font-size: 0.95rem; font-weight: 900; letter-spacing: 1px;">{titulo_grupo}</th>
     <th>J</th><th>G</th><th>E</th><th>P</th>
     <th>GF</th><th>GC</th><th>DG</th><th>PTS</th>
 </tr>
@@ -618,7 +617,7 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 6. CABECERA (LOGO 100% CENTRADO MEDIANTE HTML/BASE64)
+# 6. CABECERA
 # ---------------------------------------------------------
 if LOGO_PATH.exists():
     img_b64 = get_image_base64(LOGO_PATH)
@@ -664,14 +663,12 @@ if jornada_key_state not in st.session_state:
 col_tabla, col_partidos = st.columns([1.35, 1], gap="medium")
 
 with col_tabla:
-    # Detección automática si es móvil mediante el navegador
     if "modo_movil_toggle" not in st.session_state:
         headers = getattr(st, "context", None) and getattr(st.context, "headers", {})
         user_agent = headers.get("User-Agent", "").lower() if headers else ""
         es_movil = any(k in user_agent for k in ["mobi", "android", "iphone", "ipad", "ipod"])
         st.session_state["modo_movil_toggle"] = es_movil
 
-    # Botón/Interruptor para alternar el modo compacto con detección automática
     modo_movil = st.toggle(
         "Modo compacto", 
         key="modo_movil_toggle", 
